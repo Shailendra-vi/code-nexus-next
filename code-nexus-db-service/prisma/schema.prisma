@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Status {
+  PENDING
+  RUNNING
+  COMPLETED
+  ERROR
+}
+
+enum ExecutionStatus {
+  COMPILATION_ERROR
+  RUNTIME_ERROR
+  TIME_LIMIT_EXCEEDED
+  CORRECT
+}
+
+model User {
+  id          String     @id @default(uuid())
+  email       String     @unique
+  password    String
+  name        String
+  role        Role       @default(USER)
+  contests    Contests[]
+  submission  Submission[]
+  problems    Problem[]
+  test_cases  TestCases[]
+}
+
+
+model Contests {
+  id            String   @id @default(uuid())
+  created_by    String
+  creator       User     @relation(fields: [created_by], references: [id])
+  title         String
+  description   String
+  start_time    DateTime
+  end_time      DateTime
+  duration      Int
+  date_created  DateTime @default(now())
+  date_modified DateTime @updatedAt
+  problems      Problem[]
+
+  test_cases    TestCases[]
+
+  submission    Submission[]
+}
+
+model Problem {
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  contest_id    String
+  contest       Contests @relation(fields: [contest_id], references: [id])
+  created_by    String
+  creator       User     @relation(fields: [created_by], references: [id])
+  date_created  DateTime @default(now())
+  test_cases    TestCases[]
+  submission    Submission[]
+}
+
+model TestCases {
+  id            String   @id @default(uuid())
+  input         String
+  output        String
+  contest_id    String
+  created_by    String
+  creator       User     @relation(fields: [created_by], references: [id])
+  contest       Contests @relation(fields: [contest_id], references: [id])
+  problem_id    String
+  problem       Problem  @relation(fields: [problem_id], references: [id])
+  date_created  DateTime @default(now())
+}
+
+
+model Submission {
+  id                        String   @id @default(uuid())
+  submitted_by              String
+  user                      User     @relation(fields: [submitted_by], references: [id])
+  status                    Status
+  programming_language      String
+  source_code               String
+  execution_status          ExecutionStatus?
+  execution_output          String?
+  execution_time            Float?
+  compilation_error         String?
+  date_created              DateTime @default(now())
+  date_modified             DateTime @updatedAt
+  problem_id                String
+  problem                   Problem  @relation(fields: [problem_id], references: [id])
+  contest_id                String
+  contest                   Contests @relation(fields: [contest_id], references: [id])
+}
